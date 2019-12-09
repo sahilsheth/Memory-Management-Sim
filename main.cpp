@@ -1,89 +1,360 @@
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdlib.h>
+#include "process.h"
+#include "memoryBlock.h"
+#include <iostream>
+#include <fstream>
+#include <queue>
+#include <cmath>
+#include <string>
+#include <vector>
+#include <algorithm>
+using namespace std;
 
-__intptr_t currBreak; //Global variable that tracks processes
-// Used allocate more memory by incrementing break value
-void *sbrk(__intptr_t inc){ //From Stackoverflow.com
-  __intptr_t oldBreak = currBreak;
-  currBreak += inc;
-  return (void*) oldBreak;
-}
 
-typedef struct mem_block{
-  struct mem_block *nxt; //Points to next memory
-  bool free; // Checks if memory block is free
-  size_t size; //Allocated size in memory
-  void *memAddress; //Starting point in memory allocation
-}_MEMBLOCK;
 
-#define BLOCK_SIZE sizeof(_MEMBLOCK) //Structure size_t
 
-//This function allocates memory
-_MEMBLOCK *memBlockAllocation(size_t size){
-  _MEMBLOCK *b = (_MEMBLOCK*)sbrk(0); //Stores break point to begin mem allocation
-  void *memAddy = (void*)sbrk(0); //Stores memory address to object
-  void *memAllocation = (void*)sbrk(BLOCK_SIZE + size); //Changes location with respect to Block size
 
-  // Checks if memory allocation pointer can increment
-  if(memAllocation == (void*) -1){
-    return NULL;
-  }
-  else{
-    b->nxt = NULL;
-    b->free = false;
-    b->size = size;
-    b->memAddress = memAddy + BLOCK_SIZE; //ERROR HERE, MEANT TO INCREMENT BLOCK
-    return b;
-  }
-}
+void readFile(vector<process> &);
+//void printMemory(vector<memoryBlock> &memBlocks, int &memorySize, int &pageSize, int &memoryLeft);
+void printMemory(vector<memoryBlock> &memBlocks, int &memorySize, int &pageSize);
+void print(vector<int> &);
+void printResults(vector<process> &, vector<int> &, int &, int &);
+void find(vector<process> &, vector<int> &);
+bool addToMem(vector<memoryBlock> &, int &, int &, process &);
+void createMem(vector<memoryBlock> &, int &, int &);
+void removeFromMemoryMap(vector<memoryBlock> &, int &, int &, int &);
+int check(vector<memoryBlock> &, int &, int &, int &);
 
-// Allocates next memory block
-void nextAllocationMemBlock(size_t size, _MEMBLOCK **head){
-  _MEMBLOCK *current = *head;
-  void *memAllocation = NULL;
-  void *memAddy = (void*)sbrk(0);
 
-  if (current == NULL){
-    *head =  memBlockAllocation(size);
-  }
-  else{
-    while(current->nxt != NULL){
-      current = current->nxt;
+              
+void readFile(vector<process> &processing)
+{
+    ifstream readingFile;
+    readingFile.open("in1.txt");
+    process p;
+    int processes;
+    readingFile >> processes;
+    for(int i = 0; i < processes; i++)
+    {
+        readingFile >> p.memoryNum;
+        readingFile >> p.startTime;
+        readingFile >> p.endTime;
+        readingFile >> p.numBlocks;
+        vector<int> tempBlock;
+        int blocks;
+        for(int j = 0; j < p.numBlocks; j++)
+        {
+            readingFile >> blocks;
+            tempBlock.push_back(blocks);
+        }
+        
+        p.memoryBlocks = tempBlock;
+        processing.push_back(p);
     }
-    _MEMBLOCK *newblock = sbrk(0);
-
-    memAllocation = (void*)sbrk(BLOCK_SIZE + size);
-    if(memAllocation == (void*) -1){
-      //Overwrites data
-    }
-    else{
-      newblock->nxt = NULL;
-      newblock->free = false;
-      newblock->size = size;
-      newblock->memAddress = memAddy + BLOCK_SIZE; //ERROR HERE, MEANT TO INCREMENT BLOCK
-      current->nxt = newblock;
-    }
-  }
+    readingFile.close();
 }
 
-void freeMemoryBlock(_MEMBLOCK **head){
-
-  if(*head == NULL){
-    //Memory is not free
-  }
-  else{//Overwrites contents
-    (*head)->free = true;
-  }
+void printMemory(vector<memoryBlock> &memBlocks, int &memorySize, int &pageSize)
+{
+    
+    int begin = 0;
+    int finish = 0;
+    int countMem = 0;
+    cout << "Memory Map: " << endl;
+    
+    
+    while (countMem < (memorySize / pageSize))
+    {
+        if (!memBlocks[countMem].blockAvailable)
+        {
+            if (begin != 0)
+            {
+                finish = countMem - 1;
+                cout << "            " << begin * pageSize << "-" << ((finish + 1) * pageSize) - 1 << ": Free frame(s)" <<endl;
+                begin = 0;
+            }
+            
+            cout << "            " << memBlocks[countMem].startingBlock << "-" << memBlocks[countMem].endingBlock << ": Processes "
+            << memBlocks[countMem].numberofProcess << " , Pages " << memBlocks[countMem].numberofPages << endl;
+        }
+        else if (begin == 0)
+        {
+            begin = countMem;
+        }
+        
+        countMem++;
+    }
+    
+    if (begin != 0)
+    {
+        finish = countMem - 1;
+        cout << "     " << begin * pageSize << "-" << ((finish + 1) * pageSize) - 1 << ": Free frame(s)" <<endl;
+    }
+    
+    cout << endl;
 }
 
-//Print function HERE
+void print(vector<int> & printing)
+{
+    for (int i = 0; i < printing.size(); i++)
+        cout << printing[i] << " ";
+}
 
-int main(int argc, char const *argv[]) {
-  _MEMBLOCK *test = NULL;
-  nextAllocationMemBlock(10,&test);
-    nextAllocationMemBlock(35,&test);
-    //print
-    freeMemoryBlock(&(test->nxt));
 
-  return 0;
+void printResults(vector<process> &lists, vector<int> &timing, int &sizeofMem, int &sizeofPage)
+{
+    vector<int> input;
+    bool line;
+    process q;
+    vector<memoryBlock> memMap;
+    
+    //Create the Memory Map
+    createMem(memMap, sizeofMem, sizeofPage);
+    
+    for (int i = 0; i < timing.size(); ++i)
+    {
+        line = true;
+        
+        //cout << "t = " << timing[i] << ": ";
+        
+     
+        for (int j = 0; j < lists.size(); ++j)
+        {
+            if (lists[j].startTime == timing[i])
+            {
+                input.push_back(lists[j].memoryNum);
+                
+                if (!line)
+                {
+                    cout << "    ";
+                }
+                
+                cout << "Process " << lists[j].memoryNum << " arrives" << endl;
+                cout << "Input: [ ";
+                print(input);
+                cout << "]" << endl;
+                
+                line = false;
+            }
+            else if (lists[j].startTime + lists[j].endTime == timing[i])
+            {
+                if (!line)
+                {
+                    cout << "       ";
+                }
+                
+                cout << "Process " << lists[j].memoryNum << " completes" << endl;
+                removeFromMemoryMap(memMap, sizeofMem, sizeofPage, lists[j].memoryNum);
+                printMemory(memMap, sizeofMem, sizeofPage);
+                line = false;
+            }
+        }
+        
+        
+        while (input.size() != 0)
+        {
+       
+            q = lists[input.front() - 1];
+            
+            if (addToMem(memMap, sizeofMem, sizeofPage, q) )
+            {
+                cout << "Memory Map moves Process " << q.memoryNum << " to memory" << endl;
+                
+                input.erase(input.begin());
+                
+                cout << " Input: [ ";
+                print(input);
+                cout << "]" << endl;
+                
+                
+                printMemory(memMap, sizeofMem, sizeofPage);
+            }
+            else
+            {
+                cout << "\nNo free space!\n\n";
+                break;
+            }
+        }
+    }
+}
+
+void removeFromMemoryMap(vector<memoryBlock> &mapping, int &memSize, int &pageSize, int &r)
+{
+    for (int i = 0; i < mapping.size(); i++)
+    {
+        if (mapping[i].numberofProcess == r)
+        {
+            mapping[i].blockAvailable = true;
+        }
+    }
+}
+
+
+bool addToMem(vector<memoryBlock> &memoriesMap, int &memoriesSize, int &pagesSize, process &s)
+{
+    
+    double sizeofBlocks;
+    int insize;
+    
+    int blockStart = -1;
+    bool adding;
+    int numbPage = 1;
+    
+    for (int i = 0; i < s.numBlocks; i++)
+    {
+        sizeofBlocks = s.memoryBlocks[i] / pagesSize;
+        
+        for (int j = i; j < s.numBlocks; ++j)
+        {
+            sizeofBlocks += (s.memoryBlocks[j] / pagesSize);
+        }
+        
+        insize = (int) sizeofBlocks;
+        blockStart = check(memoriesMap, memoriesSize, pagesSize, insize);
+        
+        if (blockStart == -1)
+        {
+            insize = (int) sizeofBlocks;
+            blockStart = check(memoriesMap, memoriesSize, pagesSize, insize);
+        }
+        
+        adding = false;
+        
+        if (blockStart > -1)
+        {
+            adding = true;
+            
+            for (int j = blockStart; j < (blockStart + ((s.memoryBlocks[i] + 99) / pagesSize)); j++)
+            {
+                memoriesMap[j].numberofProcess = s.memoryNum;
+                memoriesMap[j].numberofPages = numbPage;
+                memoriesMap[j].blockAvailable = false;
+                numbPage++;
+            }
+        }
+    }
+    
+    return adding;
+}
+
+
+
+
+void createMem(vector<memoryBlock> &memories, int &mem, int &page)
+{
+    memoryBlock t;
+    
+    for (int i = 0; i < (mem / page); ++i)
+    {
+        t.startingBlock = i * page;
+        t.endingBlock = ((i + 1) * page) - 1;
+        t.numberofProcess = -1;
+        t.numberofPages = -1;
+        t.blockAvailable = true;
+        memories.push_back(t);
+    }
+}
+
+
+
+
+void find(vector<process> &listing, vector<int> &times)
+{
+    bool finding;
+    bool found;
+    
+    for (int i = 0; i < listing.size(); i++)
+    {
+        finding = false;
+        found = false;
+        
+        for (int j = 0; j < times.size(); j++)
+        {
+            if (listing[i].startTime == times[j])
+            {
+                finding = true;
+            }
+            
+            if (listing[i].startTime + listing[i].endTime == times[j])
+            {
+                found = true;
+            }
+        }
+        
+        if (!finding)
+        {
+            times.push_back(listing[i].startTime);
+        }
+        
+        if (!found)
+        {
+            times.push_back(listing[i].startTime + listing[i].endTime);
+        }
+    }
+    
+    sort(times.begin(), times.end());
+}
+
+int check(vector<memoryBlock> &memoMap, int &memoSize, int &pagesSize, int &blocksSize)
+{
+    int free = 0;
+    
+    for (int i = 0; i < memoMap.size(); i++)
+    {
+        if (memoMap[i].blockAvailable)
+        {
+            free++;
+        }
+        else
+        {
+            free = 0;
+        }
+        
+        if (free == blocksSize)
+        {
+            
+            return (i + 1 - blocksSize);
+        }
+    }
+    
+    return -1;
+}
+
+
+
+int main(int argc, char** argv)
+{
+    int sizeofPages = 0;
+    int sizeofMemory = 0;
+    
+    if(argc == 3)
+    {
+        sizeofMemory = atoi(argv[1]);
+        sizeofPages = atoi(argv[2]) * 100;
+
+    }
+    else
+    {
+        cout<< "Memory Size(Kbytes): ";
+        cin>> sizeofMemory;
+        cout<< "Page Size (1:100, 2:200, 3:400): ";
+        cin>> sizeofPages;
+        sizeofPages = sizeofPages * 100;
+    }
+    
+    //Variables
+    vector<process> listofProcesses;
+    vector<int> memTime;
+    
+    if (sizeofPages == 300)
+    {
+        sizeofPages = sizeofPages + 100;
+    }
+    
+    readFile(listofProcesses);
+    find(listofProcesses, memTime);
+    printResults(listofProcesses, memTime, sizeofMemory, sizeofPages);
+    return 0;
+    
 }
