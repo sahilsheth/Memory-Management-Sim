@@ -1,9 +1,3 @@
-// Prompt user for the MEMORY SIZE and PAGE SIZE
-// Ex : Memory size> 2000
-//Page Size (1: 100, 2: 200, 3: 400)> 3
-//Prompt user for name of a workload file( Has int N = # of processes in file)
-//Each process has unique process id first line, Arrival time, Lifetime in Memory
-// and Address space seperated by single blank line
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -44,8 +38,32 @@ _MEMBLOCK *memBlockAllocation(size_t size){
 }
 
 // Allocates next memory block
-void nextAllocationMemBlock(size_t size, _MEMBLOCK ** head){
+void nextAllocationMemBlock(size_t size, _MEMBLOCK **head){
+  _MEMBLOCK *current = *head;
+  void *memAllocation = NULL;
+  void *memAddy = (void*)sbrk(0);
 
+  if (current == NULL){
+    *head =  memBlockAllocation(size);
+  }
+  else{
+    while(current->nxt != NULL){
+      current = current->nxt;
+    }
+    _MEMBLOCK *newblock = sbrk(0);
+
+    memAllocation = (void*)sbrk(BLOCK_SIZE + size);
+    if(memAllocation == (void*) -1){
+      //Overwrites data
+    }
+    else{
+      newblock->nxt = NULL;
+      newblock->free = false;
+      newblock->size = size;
+      newblock->memAddress = memAddy + BLOCK_SIZE; //ERROR HERE, MEANT TO INCREMENT BLOCK
+      current->nxt = newblock;
+    }
+  }
 }
 
 void freeMemoryBlock(_MEMBLOCK **head){
@@ -56,4 +74,16 @@ void freeMemoryBlock(_MEMBLOCK **head){
   else{//Overwrites contents
     (*head)->free = true;
   }
+}
+
+//Print function HERE
+
+int main(int argc, char const *argv[]) {
+  _MEMBLOCK *test = NULL;
+  nextAllocationMemBlock(10,&test);
+    nextAllocationMemBlock(35,&test);
+    //print
+    freeMemoryBlock(&(test->nxt));
+
+  return 0;
 }
