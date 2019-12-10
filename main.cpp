@@ -23,7 +23,7 @@ void printResults(vector<process> &, vector<int> &, int &, int &);
 void find(vector<process> &, vector<int> &);
 bool addToMem(vector<memoryBlock> &, int &, int &, process &);
 void createMem(vector<memoryBlock> &, int &, int &);
-void removeFromMemoryMap(vector<memoryBlock> &, int &, int &, int &);
+void removeFromMemo(vector<memoryBlock> &, int &, int &, int &);
 int check(vector<memoryBlock> &, int &, int &, int &);
 
 
@@ -145,7 +145,7 @@ void printResults(vector<process> &lists, vector<int> &timing, int &sizeofMem, i
                 }
                 
                 cout << "Process " << lists[j].memoryNum << " completes" << endl;
-                removeFromMemoryMap(memMap, sizeofMem, sizeofPage, lists[j].memoryNum);
+                removeFromMemo(memMap, sizeofMem, sizeofPage, lists[j].memoryNum);
                 printMemory(memMap, sizeofMem, sizeofPage);
                 line = false;
             }
@@ -179,7 +179,7 @@ void printResults(vector<process> &lists, vector<int> &timing, int &sizeofMem, i
     }
 }
 
-void removeFromMemoryMap(vector<memoryBlock> &mapping, int &memSize, int &pageSize, int &r)
+void removeFromMemo(vector<memoryBlock> &mapping, int &memSize, int &pageSize, int &r)
 {
     for (int i = 0; i < mapping.size(); i++)
     {
