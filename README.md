@@ -6,7 +6,8 @@ Sahil Sheth, sahilsheth642@csu.fullerton.edu
 - Worked on printMemory and print
 
 Cesar Martinez Melgoza, cesmartz10@csu.fullerton.edu
-- Worked on main
+- Worked on  addToMem
+- Worked on removeFromMemo
 - Tested on Ubuntu Linux clang++
 
 Marco Botello, marco.botello@csu.fullerton.edu
