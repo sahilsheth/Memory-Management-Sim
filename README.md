@@ -3,6 +3,7 @@
 Sahil Sheth, sahilsheth642@csu.fullerton.edu
 - Worked on readFile
 - Worked on main
+- Worked on printMemory and print
 
 Cesar Martinez Melgoza, cesmartz10@csu.fullerton.edu
 - Worked on main
