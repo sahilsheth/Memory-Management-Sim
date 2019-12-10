@@ -1,5 +1,9 @@
 # Memory-Management-Simulator
 
+Sahil Sheth, sahilsheth642@csu.fullerton.edu
+- Worked on readFile
+- Worked on main
+
 Cesar Martinez Melgoza, cesmartz10@csu.fullerton.edu
 
 Marco Botello, marco.botello@csu.fullerton.edu
