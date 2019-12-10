@@ -13,4 +13,5 @@ Marco Botello, marco.botello@csu.fullerton.edu
 
 Emmanuel Khlot, ekhlot@csu.fullerton.edu
 - Worked on Design File
+- Worked on createMemo
 - Tested on Mac Terminal w/ g++
