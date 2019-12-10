@@ -11,6 +11,8 @@ Cesar Martinez Melgoza, cesmartz10@csu.fullerton.edu
 - Tested on Ubuntu Linux clang++
 
 Marco Botello, marco.botello@csu.fullerton.edu
+- Worked on printResults
+- Tested on Mac Terminal
 
 Emmanuel Khlot, ekhlot@csu.fullerton.edu
 - Worked on Design File
