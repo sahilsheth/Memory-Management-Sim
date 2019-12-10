@@ -5,6 +5,8 @@ Sahil Sheth, sahilsheth642@csu.fullerton.edu
 - Worked on main
 
 Cesar Martinez Melgoza, cesmartz10@csu.fullerton.edu
+- Worked on main
+- Tested on Ubuntu Linux clang++
 
 Marco Botello, marco.botello@csu.fullerton.edu
 
